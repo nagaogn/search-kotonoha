@@ -1,0 +1,89 @@
+<html>
+<head>
+	<meta charset="UTF-8">
+	<title>ことのはたんご検索</title>
+	<style>
+		#words{
+			display: none;
+		}
+		#query{
+			font-size: 20px;
+		}
+		#result{
+			display: none;
+		}
+		.toggle:checked + #result{
+			display: block;
+		}
+	</style>
+</head>
+<body>
+	<div>ことのはたんご検索</div>
+	<div>(?=.*)(?!.*[])^$</div>
+	<div>(?![])</div>
+	<div>[]{5}</div>
+	<div><input type="text" value="(?=.*)(?!.*[])^.....$" id="query" size="100"></div>
+	<div>候補数：<span id="result_length"></span></div>
+	<input type="checkbox" class="toggle">
+	<span id="result"></span>
+	</div>
+	<br>
+	<div>頻出文字</div>
+	<div id="cnt"></div>
+	<script src="dic.js"></script>
+	<script>
+		const hiraToKata = (str) => {
+			return str.replaceAll(/[\u3041-\u3096]/g, (match) => {
+				return String.fromCharCode(match.charCodeAt(0) + 0x60);
+			});
+		}
+		const countChar = (words) => {
+			let m = new Map();
+			words.join('').split('').forEach((char) => {
+				let cnt = m.get(char);
+				if(cnt){
+					cnt = cnt + 1;
+				}else{
+					cnt = 1;
+				}
+				m.set(char, cnt);
+			});
+			return new Map([...m].sort((a, b) => a[1] - b[1]).reverse());
+		}
+		const sortWords = (words,cnt) => {
+			let m = new Map();
+			words.forEach((str) => {
+				let weight = 0;
+				let s = new Set();
+				for(let c of str){
+					if(!s.has(c)){
+						weight += cnt.get(c);
+						s.add(c);
+					}
+				}
+				m.set(str, weight);
+			});
+			m = new Map([...m].sort((a, b) => a[1] - b[1]).reverse());
+			return Array.from(m.keys());
+		}
+		const query = document.getElementById('query');
+		const search = () => {
+			const words = dic.replaceAll(/\n|\t/g, '').split(' ');
+			// let pattern = new RegExp(hiraToKata(query.value));
+			let pattern = new RegExp(query.value);
+			let result = words.filter(RegExp.prototype.test, pattern);
+			let cnt = countChar(result);
+			result = sortWords(result,cnt);
+			document.getElementById('result').textContent = result.join(' ');
+			document.getElementById('result_length').textContent = result.length;
+			let cnt_out = '';
+			cnt.forEach((value, key) => cnt_out += key);
+			cnt_out += '<br>';
+			cnt.forEach((value, key) => cnt_out += `${key}: ${value}<br>`);
+			document.getElementById('cnt').innerHTML = cnt_out;
+		}
+		query.addEventListener('input', search);
+		window.onload = search();
+	</script>
+</body>
+</html>
